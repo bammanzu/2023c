@@ -1,0 +1,34 @@
+#include <stdio.h>
+
+// Union 정의
+union MyUnion {
+    int i;
+    float f;
+    char str[20];
+};
+
+int main() {
+    union MyUnion u;
+
+    u.i = 42;
+    printf("정수 값: %d\n", u.i);
+
+    u.f = 3.14;
+    printf("부동 소수점 값: %f\n", u.f);
+
+    strcpy(u.str, "Hello, Union!");
+    printf("문자열 값: %s\n", u.str);
+
+    return 0;
+}
+
+/*C 언어에서 union은 여러 데이터 유형을 하나의 메모리 위치에서 저장할 수 있는 데이터 
+구조를 나타냅니다. union은 struct와 비슷하지만, struct와 달리 모든 멤버가 메모리 내에서 
+같은 위치를 공유합니다. 이것은 동일한 메모리 위치에서 다양한 유형의 데이터를 저장하고 필요할
+때 유형을 변환할 수 있는 유용한 방법을 제공합니다.*/
+/*이 예제에서는 MyUnion이라는 union을 정의하고, 정수(int), 부동 소수점(float), 문자열(char 배열)
+세 가지 다른 유형의 멤버를 가지고 있습니다. main 함수에서는 union을 만들고 각 멤버에 값을 
+할당한 후에 값을 출력합니다. 주의할 점은 한 번에 하나의 멤버만 유효하며, 다른 멤버에 값을 
+할당하면 이전 값을 덮어쓴다는 것입니다.*/
+
+

@@ -1,0 +1,266 @@
+1번 문제
+1.학생들은 아두이노를 사용하여 자신만의 창의적인 프로젝트를 디자인하고 구현하는 기회를 가져야 합니다.
+2.학생들은 작은 그룹에서 협력하여 아두이노 프로젝트를 완성하고 문제를 해결하는 방법을 배워야 합니다.
+3.학생들은 프로젝트의 목표, 설계, 결과 등을 명확하게 문서화하고 다른 사람들에게 효과적으로 전달하는 능력을 개발해야 합니다.
+4.학생들은 아두이노 IDE를 사용하여 프로그래밍 스킬을 개발하고, 센서 및 액추에이터와 상호 작용하는 방법을 배워야 합니다.
+5.학생들은 프로젝트 중에 발생하는 문제를 해결하고, 실패와 성공을 통해 학습하는 경험을 쌓아야 합니다.
+
+2번 문제
+아두이노 코드
+#include <ESP8266WiFi.h>  // Wi-Fi 라이브러리
+#define RELAY_PIN 4      // 릴레이 제어 핀 설정 (예: D4 핀)
+
+const char* ssid = "YOUR_SSID";          // Wi-Fi SSID
+const char* password = "YOUR_PASSWORD";  // Wi-Fi 암호
+WiFiServer server(80);                   // 웹 서버 포트 설정
+
+void setup() {
+  pinMode(RELAY_PIN, OUTPUT);  // 릴레이 핀을 출력 모드로 설정
+  digitalWrite(RELAY_PIN, LOW); // 초기에 릴레이를 끈 상태로 설정
+
+  // Wi-Fi 연결
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  // 웹 서버 시작
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available();  // 클라이언트 요청 대기
+
+  if (client) {
+    Serial.println("New client connected");
+    String currentLine = "";
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+        currentLine += c;
+        if (c == '\n') {
+          if (currentLine.length() == 0) {
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println();
+            client.println("<html><body>");
+            client.println("<h1>전등 제어</h1>");
+            client.println("<p><a href=\"/on\">켜기</a></p>");
+            client.println("<p><a href=\"/off\">끄기</a></p>");
+            client.println("</body></html>");
+            break;
+          } else if (currentLine.startsWith("GET /on")) {
+            digitalWrite(RELAY_PIN, HIGH); // 릴레이 켜기
+          } else if (currentLine.startsWith("GET /off")) {
+            digitalWrite(RELAY_PIN, LOW); // 릴레이 끄기
+          }
+          currentLine = "";
+        }
+      }
+    }
+    client.stop();
+    Serial.println("Client disconnected");
+  }
+}
+프로세싱 코드
+import processing.net.*;
+
+String ipAddress = "아두이노의 IP 주소";  // 아두이노의 IP 주소 설정
+int port = 80;
+
+void setup() {
+  size(200, 200);
+  background(255);
+}
+
+void draw() {
+  // 켜기 버튼
+  fill(0, 255, 0);
+  rect(50, 50, 100, 50);
+  fill(0);
+  textSize(20);
+  text("켜기", 90, 85);
+
+  // 끄기 버튼
+  fill(255, 0, 0);
+  rect(50, 110, 100, 50);
+  fill(0);
+  textSize(20);
+  text("끄기", 90, 145);
+}
+
+void mousePressed() {
+  // 켜기 버튼을 누르면 아두이노로 "/on" 요청을 보냄
+  if (mouseX > 50 && mouseX < 150 && mouseY > 50 && mouseY < 100) {
+    println("켜기 버튼 클릭");
+    sendRequest("/on");
+  }
+  // 끄기 버튼을 누르면 아두이노로 "/off" 요청을 보냄
+  else if (mouseX > 50 && mouseX < 150 && mouseY > 110 && mouseY < 160) {
+    println("끄기 버튼 클릭");
+    sendRequest("/off");
+  }
+}
+
+void sendRequest(String path) {
+  Client client = new Client(this, ipAddress, port);
+  if (client == null) {
+    println("연결 실패");
+    return;
+  }
+  client.write("GET " + path + " HTTP/1.1\n");
+  client.write("Host: " + ipAddress + "\n\n");
+  client.stop();
+
+3번 문제
+아두이노 코드
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+
+const char* ssid = "YOUR_SSID";          // Wi-Fi SSID
+const char* password = "YOUR_PASSWORD";  // Wi-Fi 암호
+const char* serverAddress = "YOUR_SERVER_IP";  // 서버 IP 주소
+const int serverPort = 80;               // 서버 포트
+
+const int switchPin = D2;  // 스위치가 연결된 핀 (예: D2 핀)
+bool switchState = 0;     // 스위치 상태 (0 또는 1)
+
+WiFiClient client;
+
+void setup() {
+  pinMode(switchPin, INPUT_PULLUP);  // 내부 풀업 저항 사용
+  Serial.begin(115200);
+
+  // Wi-Fi 연결
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  // 스위치 상태 읽기
+  switchState = digitalRead(switchPin);
+
+  // 서버로 스위치 상태 전송
+  if (client.connect(serverAddress, serverPort)) {
+    client.print("GET /update?switchState=");
+    client.print(switchState);
+    client.println(" HTTP/1.1");
+    client.println("Host: " + String(serverAddress));
+    client.println("Connection: close");
+    client.println();
+    client.stop();
+  }
+
+  delay(1000);  // 1초에 한 번씩 전송
+}
+프로세싱 코드
+import processing.net.*;
+
+int serverPort = 80;
+String serverAddress = "YOUR_SERVER_IP";  // 서버 IP 주소
+String ledColor = "black";  // 초기 LED 색상 (검은색)
+
+Client client;
+
+void setup() {
+  size(400, 200);
+  client = new Client(this, serverAddress, serverPort);
+}
+
+void draw() {
+  background(ledColor.equals("black") ? 0 : 0, 255, 0);
+
+  // 스위치 상태 읽기 (실제로는 아두이노에서 전송되는 데이터를 수신해야 함)
+  int switchState = 1;  // 예시: 아두이노에서 전송된 스위치 상태
+
+  // 스위치 상태에 따라 LED 색상 변경
+  if (switchState == 1) {
+    ledColor = "green";  // 초록색
+  } else if (switchState == 2) {
+    ledColor = "black";  // 검은색
+  }
+
+  // 서버로 스위치 상태 전송 (실제로는 아두이노에서 주기적으로 전송하는 것으로 대체됩니다)
+  if (client != null && client.active()) {
+    client.write("GET /update?switchState=" + switchState + " HTTP/1.1\r\n");
+    client.write("Host: " + serverAddress + "\r\n");
+    client.write("Connection: close\r\n\r\n");
+    client.stop();
+  }
+
+  delay(1000);  // 1초에 한 번씩 업데이트
+}
+
+4번 문제
+프로세싱 코드
+import processing.net.*;
+
+Server server; // 웹 서버 객체
+int port = 80; // 서버 포트
+
+void setup() {
+  size(200, 200);
+  background(255);
+  server = new Server(this, port);
+}
+
+void draw() {
+  // 클라이언트 연결 대기
+  Client client = server.available();
+  
+  if (client != null) {
+    String request = client.readString();
+    client.stop();
+    
+    if (request != null) {
+      // 클라이언트로부터 요청을 받았을 때
+      int num = Integer.parseInt(request);
+      
+      if (num == 1) {
+        // 클라이언트가 1을 보냈을 때, 배경색을 푸른색으로 변경
+        background(0, 0, 255);
+      } else if (num == 0) {
+        // 클라이언트가 0을 보냈을 때, 배경색을 붉은색으로 변경
+        background(255, 0, 0);
+      }
+    }
+  }
+}
+5번 문제
+아두이노 코드
+int ledPin = 7;    // LED가 연결된 핀
+int speakerPin = 4; // 피에조 스피커가 연결된 핀
+int melody[] = {262, 294, 330, 349}; // 도, 레, 미, 파 음계
+int noteDuration = 200; // 음표 지속 시간 (ms)
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(speakerPin, OUTPUT);
+  noTone(speakerPin); // 초기에 스피커 끄기
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (Serial.available()) {
+    char command = Serial.read();
+    if (command == 'on') {
+      digitalWrite(ledPin, HIGH); // LED 켜기
+    } else if (command == 'off') {
+      digitalWrite(ledPin, LOW); // LED 끄기
+    } else if (isdigit(command)) {
+      int note = command - '0';
+      if (note >= 1 && note <= 4) {
+        tone(speakerPin, melody[note - 1], noteDuration); // 피에조 스피커로 음악 연주
+        delay(noteDuration + 50); // 잠시 대기
+        noTone(speakerPin); // 스피커 끄기
+      }
+    }
+  }
+}

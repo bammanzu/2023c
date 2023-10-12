@@ -1,0 +1,39 @@
+1.mymath.h 파일 생성
+#ifndef MYMATH_H
+#define MYMATH_H
+
+// 두 정수의 합을 계산하는 함수
+int add(int a, int b);
+
+#endif
+
+2.mymath.c 파일 생성
+#include "mymath.h"
+
+// 두 정수의 합을 계산하는 함수 구현
+int add(int a, int b) {
+    return a + b;
+}
+
+3.main.c 파일 생성
+#include <stdio.h>
+#include "mymath.h"
+
+int main() {
+    int result = add(22, 33);
+    printf("덧셈 결과: %d\n", result);
+    
+    return 0;
+}
+
+4. 컴파일 및 링
+1,2,3번의 파일을 같은 디렉토리에 저장한 후, 다음 명령어를 사용하여 컴파일 및 링크합니다.
+gcc -c mymath.c -o mymath.o     // mymath.c를 컴파일하여 오브젝트 파일(mytham.o) 생성
+ar rcs libmymath.a mymath.o     // 오브젝트 파일로 정적 라이브러리(libmymath.a) 생성
+
+gcc main.c -L. -lmymath -o main // main.c와 libmymath.a를 링크하여 실행 파일(main) 생성
+
+5. 실행
+컴파일 및 링크가 완료되면"./main"명령어로 프로그램을 실행할 수 있습니다.
+실행 결과는 55입니다.
+  
